@@ -1,0 +1,86 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Details - Universal Crypto Marketplace</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f4f4f4; }
+    .top-bar { background: #222; color: white; padding: 10px 20px;
+      display: flex; justify-content: space-between; align-items: center; }
+    .wallet-controls { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+    .connect-btn { background: #0073e6; color: white; }
+    .connect-btn:hover { background: #005bb5; }
+    #adminBtn { background: #0073e6; color: white; display: none; }
+    #adminBtn:hover { background: #005bb5; }
+    #contactBtn { background: #f39c12; color: white; }
+    #contactBtn:hover { background: #e67e22; }
+    .home-btn { background: #4CAF50; color: white; }
+    .home-btn:hover { background: #45a049; }
+    .wallet-controls button {
+      padding: 8px 12px; border-radius: 4px; border: none; cursor: pointer; width: 100%;
+    }
+    .product-container { display: flex; justify-content: center; padding: 40px; gap: 20px; }
+    .product-detail { background: white; padding: 30px; border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); width: 60%; }
+    .product-detail img { max-width: 100%; border-radius: 6px; margin-bottom: 20px; }
+    .product-detail h3 { font-size: 24px; margin-bottom: 15px; color: #333; }
+    .product-detail p { font-size: 16px; color: #666; margin-bottom: 15px; }
+    .product-detail .price { font-size: 22px; color: #0073e6; margin-bottom: 20px; }
+    .order-form { background: white; padding: 20px; border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); width: 30%; }
+    .order-form h3 { font-size: 24px; margin-bottom: 15px; color: #333; }
+    .order-form label { display: block; margin-top: 10px; color: #444; }
+    .order-form input {
+      width: 100%; padding: 10px; margin-top: 5px;
+      font-size: 16px; border: 1px solid #ddd; border-radius: 5px;
+    }
+    .order-form button {
+      background: #0073e6; color: white; padding: 12px; border: none;
+      border-radius: 5px; cursor: pointer; width: 100%; margin-top: 15px;
+    }
+    .order-form button:hover { background: #005bb5; }
+    footer { text-align: center; padding: 20px; background: #222; color: white; margin-top: 50px; }
+  </style>
+</head>
+<body>
+<div class="top-bar">
+  <h1>🌎 Universal Crypto Marketplace</h1>
+  <div class="wallet-controls">
+    <span id="walletDisplay">Wallet: —</span>
+    <button id="connectBtn" class="connect-btn">🔌 Connect Wallet</button>
+    <button id="adminBtn" onclick="window.location.href='admin.html';">Admin Panel</button>
+    <button id="contactBtn" onclick="window.location.href='support.html';">Support & Contact</button>
+    <button class="home-btn" onclick="window.location.href='index.html';">🏠 Home</button>
+  </div>
+</div>
+<div class="product-container">
+  <div class="product-detail" id="productDetail"></div>
+  <div class="order-form" id="orderForm">
+    <h3>🛒 Complete Your Order 🛍️</h3>
+    <form id="form">
+      <label for="name">👤 Full Name:</label>
+      <input type="text" id="name" required>
+      <label for="address">🏠 Shipping Address:</label>
+      <input type="text" id="address" required>
+      <label for="city">🌆 City:</label>
+      <input type="text" id="city" required>
+      <label for="state">🏙️ State:</label>
+      <input type="text" id="state" required>
+      <label for="region">🌍 Region:</label>
+      <input type="text" id="region" required>
+      <label for="zip">💳 Zip Code:</label>
+      <input type="text" id="zip" required>
+      <label for="quantity">🔢 Quantity:</label>
+      <input type="number" id="quantity" min="1" value="1" required>
+      <button type="button" id="submitPaymentBtn">💳 Pay with Crypto</button>
+    </form>
+  </div>
+</div>
+<footer>&copy; 2025 Universal Crypto Marketplace. All Rights Reserved.</footer>
+<script src="product.js"></script>
+</body>
+</html>

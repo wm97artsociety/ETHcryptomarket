@@ -1,0 +1,114 @@
+
+// product.js
+
+// Fetch and parse products
+function getProducts() {
+  const products = localStorage.getItem('products');
+  return products ? JSON.parse(products) : [];
+}
+
+// Load a specific product by ID
+function loadProduct() {
+  const params = new URLSearchParams(window.location.search);
+  const productId = params.get('id');
+  const allProducts = getProducts();
+  const product = allProducts.find((_, index) => index.toString() === productId);
+
+  const detail = document.getElementById('productDetail');
+  if (!product) {
+    detail.innerHTML = '<p>No product found. Go back to home.</p>';
+    return;
+  }
+
+  detail.innerHTML = `
+    <img src="${product.image}" alt="${product.name}" />
+    <h3>${product.name}</h3>
+    <p>${product.description}</p>
+    <p class="price">${product.ethPrice} ETH</p>
+  `;
+}
+
+window.onload = loadProduct;
+
+// Wallet connection and payment
+let provider, signer, userAccount = null, ethToUsd = 0, currentProduct = null;
+const ADMIN_WALLET = "0xREPLACEWITHADMINWALLET";
+
+async function fetchEthToUsd() {
+  try {
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+    const data = await res.json();
+    ethToUsd = data.ethereum.usd;
+  } catch (err) {
+    console.error('Error fetching ETH to USD:', err);
+  }
+}
+
+async function connectWallet() {
+  if (window.ethereum) {
+    provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+    await provider.send("eth_requestAccounts", []);
+    signer = provider.getSigner();
+    userAccount = await signer.getAddress();
+  } else {
+    alert('Install MetaMask or OKX Wallet!');
+  }
+}
+
+async function sendPayment(amountInEth) {
+  if (!signer) {
+    alert('Connect wallet first!');
+    return;
+  }
+  try {
+    const tx = await signer.sendTransaction({
+      to: ADMIN_WALLET,
+      value: ethers.utils.parseEther(amountInEth.toString())
+    });
+    await tx.wait();
+    alert('✔️ Payment successful!');
+  } catch (err) {
+    console.error('Payment failed:', err);
+    alert('❌ Payment failed.');
+  }
+}
+
+document.getElementById('connectBtn').addEventListener('click', async () => {
+  if (userAccount) {
+    userAccount = null;
+  } else {
+    await connectWallet();
+  }
+});
+
+document.getElementById('submitPaymentBtn').addEventListener('click', async () => {
+  const products = getProducts();
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  if (id !== null && products[id]) {
+    currentProduct = products[id];
+    const quantity = parseInt(document.getElementById('quantity').value);
+    const totalEth = currentProduct.ethPrice * quantity;
+    const totalUsd = totalEth * ethToUsd;
+
+    if (confirm(`Pay ${totalEth} ETH (~$${totalUsd.toFixed(2)})?`)) {
+      await sendPayment(totalEth);
+
+      const order = {
+        name: document.getElementById('name').value,
+        address: document.getElementById('address').value,
+        city: document.getElementById('city').value,
+        state: document.getElementById('state').value,
+        region: document.getElementById('region').value,
+        zip: document.getElementById('zip').value,
+        quantity: quantity
+      };
+
+      let orders = JSON.parse(localStorage.getItem('orders')) || [];
+      orders.push(order);
+      localStorage.setItem('orders', JSON.stringify(orders));
+    }
+  } else {
+    alert('⚠️ No product selected.');
+  }
+});

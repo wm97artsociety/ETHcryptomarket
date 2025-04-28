@@ -1,0 +1,370 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🛠️ Admin Panel</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #e0f0ff;
+      color: #000;
+      padding: 20px;
+    }
+    .box {
+      background-color: #f0f0f0;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    }
+    input, button, textarea, select {
+      padding: 6px 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    textarea {
+      resize: vertical;
+      height: 100px;
+    }
+    button {
+      cursor: pointer;
+    }
+    #errorMessage {
+      color: red;
+      display: none;
+      margin-top: 10px;
+    }
+    #adminControls {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <h1 style="margin: 0;">🔒 Admin Panel 🔑</h1>
+    <button onclick="location.href='index.html'" style="background: #4CAF50; color: white; padding: 10px 15px; border-radius: 5px; font-size: 16px; border: none; cursor: pointer;">🏠 Home</button>
+  </div>
+
+  <div class="box">
+    <label for="walletAddress">Enter Admin Wallet Address:</label>
+    <input type="text" id="walletAddress" placeholder="0x..." />
+    <button id="authenticateBtn">🔐 Authenticate</button>
+  </div>
+
+  <div class="box">
+    <h2>🌍 Region Detection</h2>
+    <p>This section will automatically detect the admin's region for tax calculations and compliance.</p>
+    <p id="regionOutput">Detecting region...</p>
+  </div>
+
+  <div id="adminControls">
+    <div class="box">
+      <h2>📦 Add a Product</h2>
+      <label>📝 Product Name: <input id="productName" /></label>
+      <label>🧾 Description: <input id="productDescription" /></label>
+      <label>🔑 SEO Keywords (comma-separated): <input id="productKeywords" /></label>
+      <label>💰 ETH Price: <input id="ethPrice" type="number" /></label>
+      <label>💵 USD Equivalent: <input id="usdPrice" readonly /></label>
+      <label>🗂️ Upload Image: <input type="file" id="productImageFile" /></label>
+      <button id="addProductBtn">➕ Add Product</button>
+      <button id="deleteSelectedBtn">🗑️ Delete Selected</button>
+<h2 style="margin-top: 20px;">🗃️ Current Product Listings</h2>
+<div id="productList" style="margin-top: 10px;"></div>
+
+      <div id="productList" style="margin-top: 20px;"></div>
+
+    </div>
+
+    <div class="box">
+      
+<h2>📬 Orders</h2>
+<button id="orderNotificationBtn">🔔 New Orders <span class="notification-counter" id="orderCounter">0</span></button>
+<button id="deleteAllOrdersBtn" class="delete-all-orders-btn">Delete All Orders</button>
+<button onclick="location.href='crypto_tax.html'" class="green-button">💰 View Taxes</button>
+<p>Total Order Value: $<span id="adminOrderValue">0</span></p>
+<p>Estimated Tax Wallet Funds: $<span id="adminTaxWallet">0</span></p>
+<div id="orderListContainer" style="display: none;">
+  <h2>📦 Recent Orders</h2>
+  <ul id="orderList"></ul>
+</div>
+
+    </div>
+
+    <div id="supportMessagesContainer" class="box">
+      <h2>💬 Support Messages</h2>
+      <ul id="supportMessageList"></ul>
+      <button id="deleteAllMessagesBtn" style="margin-top: 10px; background: red; color: white;">🗑️ Delete All Messages</button>
+    </div>
+  </div>
+
+  
+<script>
+// ⚡ ADMIN WALLET ADDRESS (Change this if selling the marketplace)
+const ADMIN_WALLET = "0xREPLACEWITHWALLETADDRESS";
+
+    async function fetchEthUsdPrice() {
+      try {
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+        const data = await response.json();
+        return parseFloat(data.ethereum.usd);
+      } catch (error) {
+        console.error('Error fetching ETH price:', error);
+        return null;
+      }
+    }
+
+    function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+    }
+
+    function displayProducts() {
+      const productList = document.getElementById('productList');
+      const products = JSON.parse(localStorage.getItem('products')) || [];
+      productList.innerHTML = '<h2>🗃️ Current Products</h2>';
+      products.forEach((p, index) => {
+        productList.innerHTML += `<div><strong>${p.name}</strong> - ${p.ethPrice} ETH <button onclick="deleteProduct(${index})">Delete</button></div>`;
+      });
+    }
+
+    function deleteProduct(index) {
+      const products = JSON.parse(localStorage.getItem('products')) || [];
+      products.splice(index, 1);
+      localStorage.setItem('products', JSON.stringify(products));
+      displayProducts();
+    }
+
+    async function addProduct() {
+      const name = document.getElementById('productName').value.trim();
+      const description = document.getElementById('productDescription').value.trim();
+      const keywords = document.getElementById('productKeywords').value.trim().split(',').map(k => k.trim());
+      const ethPrice = parseFloat(document.getElementById('ethPrice').value);
+      const file = document.getElementById('productImageFile').files[0];
+
+      if (!name || !description || isNaN(ethPrice) || !file) {
+        alert('Please fill in all fields and select an image.');
+        return;
+      }
+
+      const image = await toBase64(file);
+      const product = { name, description, keywords, ethPrice, image };
+      const products = JSON.parse(localStorage.getItem('products')) || [];
+      products.push(product);
+      localStorage.setItem('products', JSON.stringify(products));
+      displayProducts();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+document.getElementById('authenticateBtn').addEventListener('click', function() {
+  const enteredWallet = document.getElementById('walletAddress').value.trim().toLowerCase();
+  if (enteredWallet === ADMIN_WALLET.toLowerCase()) {
+    document.getElementById('adminControls').style.display = 'block';
+    document.getElementById('errorMessage').style.display = 'none';
+    loadSupportMessages();
+    loadOrders();
+    loadProducts();
+    updateTaxInfo();
+  } else {
+    document.getElementById('errorMessage').style.display = 'block';
+    document.getElementById('adminControls').style.display = 'none';
+  }
+});
+
+      const ethInput = document.getElementById('ethPrice');
+      const usdOutput = document.getElementById('usdPrice');
+      ethInput.addEventListener('input', async () => {
+        const ethAmount = parseFloat(ethInput.value);
+        if (!isNaN(ethAmount)) {
+          const rate = await fetchEthUsdPrice();
+          if (rate) usdOutput.value = `$${(ethAmount * rate).toFixed(2)}`;
+        } else {
+          usdOutput.value = '';
+        }
+      });
+
+      const orderBtn = document.getElementById('orderNotificationBtn');
+      const deleteOrdersBtn = document.getElementById('deleteAllOrdersBtn');
+      const orderListContainer = document.getElementById('orderListContainer');
+      const orderList = document.getElementById('orderList');
+      const orderCounter = document.getElementById('orderCounter');
+
+      function updateOrders() {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        orderCounter.textContent = orders.length;
+        orderList.innerHTML = '';
+        orders.forEach(order => {
+          const li = document.createElement('li');
+          li.textContent = `${order.name} - ${order.quantity} units to ${order.address}, ${order.city}`;
+          orderList.appendChild(li);
+        });
+      }
+
+      orderBtn.addEventListener('click', () => {
+        const isVisible = orderListContainer.style.display === 'block';
+        orderListContainer.style.display = isVisible ? 'none' : 'block';
+        if (!isVisible) updateOrders();
+      });
+
+      deleteOrdersBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete all orders?')) {
+          localStorage.removeItem('orders');
+          updateOrders();
+        }
+      });
+
+      const supportList = document.getElementById('supportMessageList');
+      function loadSupportMessages() {
+        const messages = JSON.parse(localStorage.getItem('supportMessages')) || [];
+        supportList.innerHTML = '';
+        messages.forEach(msg => {
+          const li = document.createElement('li');
+          li.textContent = `${msg.name}: ${msg.message}`;
+          supportList.appendChild(li);
+        });
+      }
+
+      document.getElementById('deleteAllMessagesBtn').addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete all support messages?')) {
+          localStorage.removeItem('supportMessages');
+          loadSupportMessages();
+        }
+      });
+
+      loadSupportMessages();
+
+      const adminWalletAddress = "0xreplacewithyourewallethere";
+      const authenticateBtn = document.getElementById('authenticateBtn');
+      const walletAddressInput = document.getElementById('walletAddress');
+      const errorMessage = document.getElementById('errorMessage');
+      const adminControls = document.getElementById('adminControls');
+
+      authenticateBtn.addEventListener('click', () => {
+        const enteredAddress = walletAddressInput.value.trim();
+        if (enteredAddress.toLowerCase() === adminWalletAddress.toLowerCase()) {
+          adminControls.style.display = 'block';
+          displayProducts();
+          document.getElementById('addProductBtn').addEventListener('click', addProduct);
+          errorMessage.style.display = 'none';
+        } else {
+          errorMessage.style.display = 'block';
+        }
+      });
+    });
+
+    async function detectRegion() {
+      try {
+        const res = await fetch('https://ipapi.co/json/');
+        const data = await res.json();
+        const region = `${data.city}, ${data.region}, ${data.country_name}`;
+        document.getElementById('regionOutput').innerText = `Region: ${region}`;
+      } catch (error) {
+        document.getElementById('regionOutput').innerText = 'Could not detect region.';
+        console.error('Region detection failed:', error);
+      }
+    }
+
+    detectRegion();
+  
+function updateAdminOrderTotals() {
+  const orders = JSON.parse(localStorage.getItem("orders")) || [];
+  const products = JSON.parse(localStorage.getItem("products")) || [];
+  let total = 0;
+  orders.forEach(order => {
+    const product = products.find(p => p.name === order.name);
+    if (product) {
+      total += product.ethPrice * order.quantity * 2000; // assuming $2000/ETH
+    }
+  });
+  const taxWallet = total * 0.1;
+  document.getElementById("adminOrderValue").textContent = total.toFixed(2);
+  document.getElementById("adminTaxWallet").textContent = taxWallet.toFixed(2);
+}
+document.addEventListener("DOMContentLoaded", updateAdminOrderTotals);
+
+
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+}
+
+function displayProducts() {
+  const productList = document.getElementById('productList');
+  const products = JSON.parse(localStorage.getItem('products')) || [];
+  productList.innerHTML = '';
+  products.forEach((p, index) => {
+    const item = document.createElement('div');
+    item.className = 'product-item';
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.marginBottom = '10px';
+    item.innerHTML = `
+      <img src="${p.image}" alt="product" style="width:50px;height:50px;border-radius:5px;margin-right:10px;">
+      <div style="flex:1;">
+        <strong>${p.name}</strong><br>${p.ethPrice} ETH
+      </div>
+      <button onclick="deleteProduct(${index})" style="background:red;color:white;padding:5px 10px;border:none;border-radius:5px;">🗑️ Delete</button>
+    `;
+    productList.appendChild(item);
+  });
+}
+
+function deleteProduct(index) {
+  const products = JSON.parse(localStorage.getItem('products')) || [];
+  products.splice(index, 1);
+  localStorage.setItem('products', JSON.stringify(products));
+  displayProducts();
+}
+
+async function addProduct() {
+  const name = document.getElementById('productName').value.trim();
+  const description = document.getElementById('productDescription').value.trim();
+  const keywords = document.getElementById('productKeywords').value.trim().split(',').map(k => k.trim());
+  const ethPrice = parseFloat(document.getElementById('ethPrice').value);
+  const file = document.getElementById('productImageFile').files[0];
+
+  if (!name || !description || isNaN(ethPrice) || !file) {
+    alert('Fill out everything and select an image!');
+    return;
+  }
+
+  const image = await toBase64(file);
+  const product = { name, description, keywords, ethPrice, image };
+  const products = JSON.parse(localStorage.getItem('products')) || [];
+  products.push(product);
+  localStorage.setItem('products', JSON.stringify(products));
+  displayProducts();
+  clearFields(); // clear fields after adding
+}
+
+function clearFields() {
+  document.getElementById('productName').value = '';
+  document.getElementById('productDescription').value = '';
+  document.getElementById('productKeywords').value = '';
+  document.getElementById('ethPrice').value = '';
+  document.getElementById('usdPrice').value = '';
+  document.getElementById('productImageFile').value = '';
+}
+
+document.getElementById('addProductBtn')?.addEventListener('click', addProduct);
+document.getElementById('clearFieldsBtn')?.addEventListener('click', clearFields);
+
+if (document.getElementById('productList')) {
+  displayProducts();
+}
+
+</script>
+</body>
+</html>

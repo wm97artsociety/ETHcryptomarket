@@ -1,0 +1,210 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Support & Contact</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #141e30, #243b55);
+            color: #f4f4f4;
+        }
+        .top-bar {
+            background: #1b2735;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #0f1c2e;
+        }
+        .wallet-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .wallet-controls button {
+            margin-top: 5px;
+            background: #3498db;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .wallet-controls button:hover {
+            background: #2980b9;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .radio-group {
+            display: flex;
+            gap: 10px;
+        }
+        button[type="submit"] {
+            background: #27ae60;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #1b2735;
+            color: #ccc;
+            margin-top: 40px;
+        }
+    </style>
+
+<meta name="description" content="Buy and sell unique products with crypto at the Universal Crypto Marketplace. Powered by Ethereum.">
+<meta name="keywords" content="crypto marketplace, Ethereum shopping, buy with ETH, blockchain store">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Universal Crypto Marketplace">
+<meta property="og:description" content="Crypto-based shopping platform accepting Ethereum. Fast, secure, and global.">
+<meta property="og:image" content="https://yourdomain.com/assets/featured.png">
+<meta property="og:url" content="https://yourdomain.com">
+
+</head>
+<body>
+    <div class="top-bar">
+        <div>
+            <h1>🌎 Universal Crypto Marketplace</h1>
+            <p>Buy items using ETH!</p>
+        </div>
+        <div class="wallet-controls">
+            <button id="homeBtn" onclick="window.location.href = 'index.html';" style="background: #2ecc71;">🏠 Home</button>
+            <button id="connectBtn" class="connect-btn">🔌 Connect Wallet</button>
+            <span id="walletDisplay">Wallet: —</span>
+            
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Support & Contact</h1>
+        <form id="contactForm">
+            <label for="name">Name:</label>
+            <input type="text" id="name" required>
+            <label for="message">Message:</label>
+            <textarea id="message" required></textarea>
+            <label>Contact Back:</label>
+            <div class="radio-group">
+                <input type="radio" id="contactPGP" name="contactMethod" value="pgp" required><label for="contactPGP">PGP</label>
+                <input type="radio" id="contactEmail" name="contactMethod" value="email"><label for="contactEmail">Email</label>
+                <input type="radio" id="contactPhone" name="contactMethod" value="phone"><label for="contactPhone">Phone</label>
+            </div>
+            <button type="submit">Send Message</button>
+        </form>
+        <div id="messageSent" style="display:none; color:lightgreen; font-weight:bold;">Your message has been sent!</div>
+    </div>
+
+    <footer>
+        &copy; 2025 Universal Crypto Marketplace. Rights Reserved powered by wm97 star power.
+    </footer>
+
+    <script>
+        let userAccount = null;
+        let provider;
+
+        async function connectWallet() {
+            if (window.ethereum) {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                try {
+                    await provider.send("eth_requestAccounts", []);
+                    const signer = provider.getSigner();
+                    const newAccount = await signer.getAddress();
+                    updateWalletDisplay(newAccount);
+                } catch (err) {
+                    console.error("User denied account access");
+                }
+            } else {
+                alert('Please install MetaMask!');
+            }
+        }
+
+        function disconnectWallet() {
+            userAccount = null;
+            document.getElementById('walletDisplay').textContent = 'Wallet: —';
+            
+            document.getElementById('connectBtn').textContent = '🔌 Connect Wallet';
+        }
+
+        function updateWalletDisplay(newAccount) {
+            if (userAccount !== newAccount) {
+                userAccount = newAccount;
+                const short = userAccount.slice(0, 6) + '...' + userAccount.slice(-4);
+                document.getElementById('walletDisplay').textContent = `Wallet: ${short}`;
+                document.getElementById('connectBtn').textContent = '✅ Connected (Disconnect)';
+                
+            }
+        }
+
+        function updateTokenBalance(account) {
+            if (provider) {
+                provider.getBalance(account).then((balance) => {
+                    const formattedBalance = ethers.utils.formatEther(balance);
+                    
+                }).catch(err => {
+                    console.error("Error fetching balance", err);
+                });
+            }
+        }
+
+        document.getElementById('connectBtn').addEventListener('click', () => {
+            if (userAccount) {
+                disconnectWallet();
+            } else {
+                connectWallet();
+            }
+        });
+
+        document.getElementById('contactForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const message = document.getElementById('message').value.trim();
+            const method = document.querySelector('input[name="contactMethod"]:checked');
+
+            if (!name || !message || !method) {
+                alert("Please fill in all fields and choose a contact method.");
+                return;
+            }
+
+            const supportMessages = JSON.parse(localStorage.getItem('supportMessages')) || [];
+            supportMessages.push({ name, message, method: method.value });
+            localStorage.setItem('supportMessages', JSON.stringify(supportMessages));
+
+            document.getElementById('messageSent').style.display = 'block';
+            document.getElementById('contactForm').reset();
+
+            setTimeout(() => {
+                document.getElementById('messageSent').style.display = 'none';
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cryptocurrency Taxes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <style>
+        /* Reset & layout styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f8e7;
+            color: #0c3001;
+            padding: 20px;
+            margin: 0;
+        }
+
+        /* Universal Crypto Marketplace Header */
+        .top-bar {
+            background: #222;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-bar h1 {
+            font-size: 24px;
+        }
+
+        .wallet-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .wallet-controls button {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 16px;
+            border: none;
+            width: 100%;
+        }
+
+        .connect-btn { background: #0073e6; color: white; }
+        .connect-btn:hover { background: #005bb5; }
+
+        #adminBtn { background: #0073e6; color: white; display: none; }
+        #adminBtn:hover { background: #005bb5; }
+
+        #contactBtn { background: #f39c12; color: white; }
+        #contactBtn:hover { background: #e67e22; }
+
+        .home-btn { background: #4CAF50; color: white; }
+        .home-btn:hover { background: #45a049; }
+
+        .header-menu {
+            background: #fff;
+            padding: 10px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .categories button {
+            margin-right: 10px;
+            background: #eee;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-bar input {
+            padding: 8px;
+            font-size: 14px;
+            width: 200px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        /* Green Page Styles */
+        h1, h2 {
+            color: #1a5235;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #133e04;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        ul li {
+            margin-bottom: 5px;
+            color: #133e04;
+        }
+
+        #taxCalculation {
+            background-color: #e6f4e5;
+            padding: 15px;
+            border: 1px solid #81c784;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        #taxCalculation p {
+            font-weight: bold;
+            color: #1a5235;
+        }
+
+        #taxRegions {
+            margin-top: 20px;
+        }
+
+        #taxRegions li {
+            margin-bottom: 8px;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        a {
+            color: #008000;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        #confirmationModal {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); z-index: 1000; justify-content: center; align-items: center;
+        }
+        #modalContent {
+            background: white; padding: 20px; border-radius: 8px; text-align: center;
+            width: 300px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #modalContent button {
+            background: #0073e6; color: white; padding: 10px 20px;
+            border-radius: 4px; cursor: pointer; border: none; margin-top: 20px;
+        }
+        #modalContent button:hover { background: #005bb5; }
+
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <h1>🌎 Universal Crypto Marketplace</h1>
+    <div class="wallet-controls">
+      <span id="walletDisplay">Wallet: —</span>
+      
+      <button id="connectBtn" class="connect-btn">🔌 Connect Wallet</button>
+      <button id="adminBtn" onclick="window.location.href = 'admin.html';">Admin Panel</button>
+      <button id="contactBtn" onclick="window.location.href = 'support.html';">Support & Contact</button>
+      <button class="home-btn" onclick="window.location.href = 'index.html';">🏠 Home</button>
+    </div>
+    </div>
+
+    <div class="header-menu">
+        <div class="categories">
+            <button onclick="filterCategory('all')">All Items</button>
+            <button onclick="filterCategory('clothing')">Clothing</button>
+            <button onclick="filterCategory('accessories')">Accessories</button>
+        </div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search for products..." onkeyup="searchProducts()">
+        </div>
+    </div>
+
+    <h1>💰 Cryptocurrency Tax Information</h1>
+
+    <p>
+        This page provides general information about cryptocurrency tax obligations. Please remember that tax laws are complex and can vary significantly depending on your location and individual circumstances.
+    </p>
+
+    <div id="taxCalculation">
+        <h2>Tax Calculation</h2>
+        <p>Total Profit: $<span id="totalProfit">0</span></p>
+        <p>Regional Tax Amount: $<span id="regionalTax">0</span></p>
+        <p>Amount Saved for Taxes: $<span id="amountSaved">0</span></p>
+<p>Saved Tax Amount: $<span id="savedTaxAmount">0</span></p>
+
+    </div>
+
+    <div id="taxRegions">
+        <h2>Regional Tax Information (Examples)</h2>
+        <ul>
+            <li>California: 13% of profits over $25,000</li>
+            <li>New York: 8.82% of profits over $16,000</li>
+            <li>Texas: 0%</li>
+            <li>Florida: 0%</li>
+            <li>Washington: 0%</li>
+            <li>US Federal: Up to 37%</li>
+            <li>Germany: Up to 45%</li>
+            <li>Japan: 15–55%</li>
+        </ul>
+    </div>
+
+    <button id="calculateTaxesBtn">Calculate Taxes</button>
+
+    <p>Resources:</p>
+    <ul>
+        <li><a href="https://www.irs.gov/individuals/digital-assets" target="_blank">IRS Virtual Currency Guide</a></li>
+        <li><a href="https://www.canada.ca/en/revenue-agency/services/forms-publications/publications/it479r/archived-transactions-securities-html" target="_blank">Canada CRA Info</a></li>
+        <li><a href="https://www.gov.uk/hmrc-internal-manuals/cryptoassets-manual" target="_blank">UK HMRC Crypto Manual</a></li>
+    </ul>
+
+    <div id="confirmationModal">
+        <div id="modalContent">
+            <h3>Wallet Connected!</h3>
+            <p id="connectedWalletAddress"></p>
+            <button onclick="confirmLogin()">Confirm Login</button>
+            <button onclick="cancelLogin()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let userAccount = null;
+        let provider;
+        let ethToUsd = 0;
+
+        // Fetch ETH to USD rate
+        async function fetchEthToUsd() {
+            try {
+                const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+                const data = await res.json();
+                ethToUsd = data.ethereum.usd;
+                //updateProductDisplay(); // removed from here, not needed on this page
+            } catch (err) {
+                console.error('Failed to fetch ETH to USD:', err);
+            }
+        }
+
+        setInterval(fetchEthToUsd, 5 * 60 * 1000);
+        fetchEthToUsd();
+
+        // Connect wallet
+        async function connectWallet() {
+            if (window.ethereum) {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                try {
+                    await provider.send("eth_requestAccounts", []);
+                    const signer = provider.getSigner();
+                    const newAccount = await signer.getAddress();
+                    updateWalletDisplay(newAccount);
+                } catch (err) {
+                    console.error("User denied account access");
+                }
+
+            } else {
+                alert('Please install MetaMask!');
+            }
+        }
+
+        // Update wallet display and handle UI updates
+        function updateWalletDisplay(newAccount) {
+            if (userAccount !== newAccount) {
+                userAccount = newAccount;
+                const short = userAccount.slice(0, 6) + '...' + userAccount.slice(-4);
+                document.getElementById('walletDisplay').textContent = `Wallet: ${short}`;
+                document.getElementById('connectBtn').textContent = '✅ Connected (Disconnect)';
+                document.getElementById('adminBtn').style.display = (userAccount.toLowerCase() === '0xreplacewithwallet'.toLowerCase()) ? 'inline-block' : 'none';
+                showConfirmationModal();
+            }
+        }
+
+        // Show confirmation modal
+        function showConfirmationModal() {
+            document.getElementById('connectedWalletAddress').textContent = `Wallet: ${userAccount.slice(0, 6)}...${userAccount.slice(-4)}`;
+            document.getElementById('confirmationModal').style.display = 'flex';
+        }
+
+        // Confirm login and close modal
+        function confirmLogin() {
+            document.getElementById('confirmationModal').style.display = 'none';
+            
+             // Store the wallet address
+            localStorage.setItem('walletAddress', userAccount);
+        }
+
+        // Cancel login and disconnect wallet
+        function cancelLogin() {
+            disconnectWallet();
+            document.getElementById('confirmationModal').style.display = 'none';
+        }
+
+        // Disconnect wallet
+        function disconnectWallet() {
+            userAccount = null;
+            document.getElementById('walletDisplay').textContent = 'Wallet: Not Connected';
+            
+            document.getElementById('connectBtn').textContent = '🔌 Connect Wallet';
+            document.getElementById('adminBtn').style.display = 'none';
+             localStorage.removeItem('walletAddress');
+        }
+
+        // Update balance display
+        function updateTokenBalance(account) {
+            if (provider) {
+                provider.getBalance(account).then((balance) => {
+                    const formattedBalance = ethers.utils.formatEther(balance);
+                    
+                }).catch(err=>{
+                    console.error("Error fetching balance",err);
+                    document.getElementById('tokenBalance').textContent = `Balance: -- ETH`;
+                });
+            }
+
+        }
+
+        // Toggle connect/disconnect button functionality
+        document.getElementById('connectBtn').addEventListener('click', () => {
+            if (userAccount) {
+                disconnectWallet();
+            } else {
+                connectWallet();
+            }
+        });
+
+         // Check for previously connected wallet on page load
+        window.addEventListener('load', async () => {
+            const storedWalletAddress = localStorage.getItem('walletAddress');
+            if (storedWalletAddress) {
+                try{
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    const signer = provider.getSigner(storedWalletAddress);
+                    const currentAccount = await signer.getAddress();
+                    updateWalletDisplay(currentAccount);
+                     // update balance
+                }catch(error){
+                    console.error("Error reconnecting to previous wallet",error);
+                    disconnectWallet();
+                }
+            }
+            //updateProductDisplay(); // removed, this page does not have product display
+        });
+
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const calculateTaxesBtn = document.getElementById('calculateTaxesBtn');
+            const totalProfitDisplay = document.getElementById('totalProfit');
+            const regionalTaxDisplay = document.getElementById('regionalTax');
+            const amountSavedDisplay = document.getElementById('amountSaved');
+
+            calculateTaxesBtn.addEventListener('click', () => {
+                const profit = parseFloat(prompt("Enter your total cryptocurrency profit in USD:"));
+                if (isNaN(profit)) {
+                    alert("Please enter a valid number for your profit.");
+                    return;
+                }
+
+                totalProfitDisplay.textContent = profit.toFixed(2);
+                let regionalTax = profit > 10000 ? calculateUSTax(profit) : 0;
+                regionalTaxDisplay.textContent = regionalTax.toFixed(2);
+                amountSavedDisplay.textContent = regionalTax.toFixed(2);
+                alert(`$${regionalTax.toFixed(2)} has been automatically saved to your tax wallet.`);
+            });
+
+            function calculateUSTax(profit) {
+                if (profit > 25000) return profit * 0.13;
+                if (profit > 16000) return profit * 0.0882;
+                if (profit > 10000) return profit * 0.05;
+                return 0;
+            }
+
+            
+        });
+    </script>
+
+    <div class="section">
+        <h2>📊 Federal Tax Breakdown</h2>
+        <p>Enter your total marketplace profit to calculate federal-level taxes:</p>
+        <p style="margin-top: 10px; font-style: italic; color: #0c3001;">
+        Current Federal Rates:
+        <br>• Social Security: 6.2%
+        <br>• Medicare: 1.45%
+        <br>• Federal Income Tax: ~22% average (bracket-based)
+        <br>• Misc. Contributions: 2% estimated
+        </p>
+
+        <input type="number" id="fedProfitInput" placeholder="Enter profit (USD)" />
+        <button onclick="calculateFederalBreakdown()">Calculate</button>
+        <div id="fedTaxOutput" class="output" style="margin-top: 10px; font-weight: bold;"></div>
+    </div>
+
+    <div class="section">
+        <h2>📄 Download Tax Return Sheet</h2>
+        <p>Download a full tax return document including regional taxes, federal breakdown, and recent order info.</p>
+        <button onclick="generateTaxFile()">📥 Generate Tax Sheet</button>
+        <a id="taxDownloadLink" download="tax_return_summary.txt" style="display:none;">Click here to download</a>
+    </div>
+
+    <script>
+    function calculateFederalBreakdown() {
+        const profit = parseFloat(document.getElementById('fedProfitInput').value);
+        if (isNaN(profit) || profit <= 0) {
+            document.getElementById('fedTaxOutput').textContent = "Please enter a valid profit amount.";
+            return;
+        }
+        const social = profit * 0.062;
+        const medicare = profit * 0.0145;
+        const income = profit * 0.22;
+        const misc = profit * 0.02;
+        const total = social + medicare + income + misc;
+
+        document.getElementById('fedTaxOutput').innerHTML = 
+            `Total Federal Taxes: $${total.toFixed(2)}<br>
+            - Social Security: $${social.toFixed(2)}<br>
+            - Medicare: $${medicare.toFixed(2)}<br>
+            - Income Tax (Est. 22%): $${income.toFixed(2)}<br>
+            - Misc. Fees: $${misc.toFixed(2)}`;
+    }
+
+    function generateTaxFile() {
+        const profit = document.getElementById('fedProfitInput').value || 0;
+        const fileContent = `
+==== Tax Return Document ====
+
+Total Profit: $${profit}
+Estimated Federal Tax:
+- Social Security: $${(profit * 0.062).toFixed(2)}
+- Medicare: $${(profit * 0.0145).toFixed(2)}
+- Income Tax (22%): $${(profit * 0.22).toFixed(2)}
+- Miscellaneous: $${(profit * 0.02).toFixed(2)}
+-----------------------------------------
+Total Federal Due: $${(profit * 0.3165).toFixed(2)}
+
+Order Summary: Example order history auto-filled
+Region: Auto-detected via IP
+
+Generated by Universal Crypto Marketplace Tax System.
+`;
+
+        const blob = new Blob([fileContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.getElementById('taxDownloadLink');
+        link.href = url;
+        link.style.display = 'inline-block';
+    }
+    </script>
+
+</body>
+</html>
